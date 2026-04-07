@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using ImagePlatformSorter.Models;
@@ -65,17 +66,17 @@ public sealed class ConfigService
         {
             new()
             {
-                Name = "Яндекс",
+                Name = "РЇРЅРґРµРєСЃ",
                 Sizes = new List<string> { "160x600", "240x400", "300x600" }
             },
             new()
             {
-                Name = "Гибрид",
+                Name = "Р“РёР±СЂРёРґ",
                 Sizes = new List<string> { "160x600", "240x400", "300x600", "300x50" }
             },
             new()
             {
-                Name = "Сберселлер",
+                Name = "РЎР±РµСЂСЃРµР»Р»РµСЂ",
                 Sizes = new List<string> { "320x480" }
             }
         };

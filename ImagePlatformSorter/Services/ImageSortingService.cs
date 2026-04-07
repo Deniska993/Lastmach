@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Media.Imaging;
 using ImagePlatformSorter.Models;
@@ -6,7 +7,7 @@ namespace ImagePlatformSorter.Services;
 
 public sealed class ImageSortingService
 {
-    private static readonly Regex SizePattern = new(@"(?<!\d)(\d{2,5}\s*[xхXХ]\s*\d{2,5})(?!\d)", RegexOptions.Compiled);
+    private static readonly Regex SizePattern = new(@"(?<!\d)(\d{2,5}\s*[xС…XРҐ]\s*\d{2,5})(?!\d)", RegexOptions.Compiled);
 
     private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -22,12 +23,12 @@ public sealed class ImageSortingService
     {
         if (string.IsNullOrWhiteSpace(request.InputFolder) || !Directory.Exists(request.InputFolder))
         {
-            throw new DirectoryNotFoundException("Не найдена входная папка.");
+            throw new DirectoryNotFoundException("РќРµ РЅР°Р№РґРµРЅР° РІС…РѕРґРЅР°СЏ РїР°РїРєР°.");
         }
 
         if (request.Platforms.Count == 0)
         {
-            throw new InvalidOperationException("Не выбрана ни одна площадка.");
+            throw new InvalidOperationException("РќРµ РІС‹Р±СЂР°РЅР° РЅРё РѕРґРЅР° РїР»РѕС‰Р°РґРєР°.");
         }
 
         var outputRoot = string.IsNullOrWhiteSpace(request.OutputFolder)
@@ -57,7 +58,7 @@ public sealed class ImageSortingService
             if (string.IsNullOrWhiteSpace(size))
             {
                 skippedFiles++;
-                logs.Add($"Пропуск: не удалось определить размер файла {fileName}.");
+                logs.Add($"РџСЂРѕРїСѓСЃРє: РЅРµ СѓРґР°Р»РѕСЃСЊ РѕРїСЂРµРґРµР»РёС‚СЊ СЂР°Р·РјРµСЂ С„Р°Р№Р»Р° {fileName}.");
                 continue;
             }
 
@@ -68,7 +69,7 @@ public sealed class ImageSortingService
             if (matchedPlatforms.Count == 0)
             {
                 unmatchedFiles++;
-                logs.Add($"Без совпадения: {fileName} ({size}) не подходит ни одной выбранной площадке.");
+                logs.Add($"Р‘РµР· СЃРѕРІРїР°РґРµРЅРёСЏ: {fileName} ({size}) РЅРµ РїРѕРґС…РѕРґРёС‚ РЅРё РѕРґРЅРѕР№ РІС‹Р±СЂР°РЅРЅРѕР№ РїР»РѕС‰Р°РґРєРµ.");
                 continue;
             }
 
@@ -83,13 +84,13 @@ public sealed class ImageSortingService
                 if (File.Exists(targetFilePath) && !request.OverwriteExisting)
                 {
                     skippedFiles++;
-                    logs.Add($"Пропуск: файл {fileName} уже существует в папке {platformFolderName}.");
+                    logs.Add($"РџСЂРѕРїСѓСЃРє: С„Р°Р№Р» {fileName} СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚ РІ РїР°РїРєРµ {platformFolderName}.");
                     continue;
                 }
 
                 File.Copy(filePath, targetFilePath, request.OverwriteExisting);
                 copiedFiles++;
-                logs.Add($"Скопировано: {fileName} -> {platformFolderName}");
+                logs.Add($"РЎРєРѕРїРёСЂРѕРІР°РЅРѕ: {fileName} -> {platformFolderName}");
             }
         }
 
@@ -140,10 +141,9 @@ public sealed class ImageSortingService
 
         if (string.IsNullOrWhiteSpace(safeName))
         {
-            return "Площадка";
+            return "РџР»РѕС‰Р°РґРєР°";
         }
 
         return safeName.TrimEnd('.', ' ');
     }
 }
-

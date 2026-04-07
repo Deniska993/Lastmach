@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Input;
 using ImagePlatformSorter.Models;
 using ImagePlatformSorter.Services;
 using Forms = System.Windows.Forms;
@@ -14,7 +16,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly ImageSortingService _sortingService = new();
     private string _inputFolder = string.Empty;
     private string _outputFolder = string.Empty;
-    private string _runLog = "Здесь появится результат сортировки.";
+    private string _runLog = "Р—РґРµСЃСЊ РїРѕСЏРІРёС‚СЃСЏ СЂРµР·СѓР»СЊС‚Р°С‚ СЃРѕСЂС‚РёСЂРѕРІРєРё.";
     private bool _overwriteExisting;
 
     public MainWindow()
@@ -98,8 +100,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         RunLog = Platforms.Count == 0
-            ? $"Конфиг загружен, но список площадок пуст: {_configService.ConfigPath}"
-            : $"Конфиг загружен: {_configService.ConfigPath}";
+            ? $"РљРѕРЅС„РёРі Р·Р°РіСЂСѓР¶РµРЅ, РЅРѕ СЃРїРёСЃРѕРє РїР»РѕС‰Р°РґРѕРє РїСѓСЃС‚: {_configService.ConfigPath}"
+            : $"РљРѕРЅС„РёРі Р·Р°РіСЂСѓР¶РµРЅ: {_configService.ConfigPath}";
     }
 
     private void BrowseInputFolder_Click(object sender, RoutedEventArgs e)
@@ -148,8 +150,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             System.Windows.MessageBox.Show(
                 this,
-                "Выберите существующую папку с изображениями.",
-                "Не выбрана входная папка",
+                "Р’С‹Р±РµСЂРёС‚Рµ СЃСѓС‰РµСЃС‚РІСѓСЋС‰СѓСЋ РїР°РїРєСѓ СЃ РёР·РѕР±СЂР°Р¶РµРЅРёСЏРјРё.",
+                "РќРµ РІС‹Р±СЂР°РЅР° РІС…РѕРґРЅР°СЏ РїР°РїРєР°",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return;
@@ -164,8 +166,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             System.Windows.MessageBox.Show(
                 this,
-                "Отметьте хотя бы одну площадку для сортировки.",
-                "Не выбраны площадки",
+                "РћС‚РјРµС‚СЊС‚Рµ С…РѕС‚СЏ Р±С‹ РѕРґРЅСѓ РїР»РѕС‰Р°РґРєСѓ РґР»СЏ СЃРѕСЂС‚РёСЂРѕРІРєРё.",
+                "РќРµ РІС‹Р±СЂР°РЅС‹ РїР»РѕС‰Р°РґРєРё",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return;
@@ -174,7 +176,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         try
         {
             Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
-            RunLog = "Идёт сортировка...";
+            RunLog = "РРґС‘С‚ СЃРѕСЂС‚РёСЂРѕРІРєР°...";
 
             var request = new SortRequest
             {
@@ -189,19 +191,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             System.Windows.MessageBox.Show(
                 this,
-                $"Сортировка завершена.\n\nВыходная папка:\n{result.OutputFolder}",
-                "Готово",
+                $"РЎРѕСЂС‚РёСЂРѕРІРєР° Р·Р°РІРµСЂС€РµРЅР°.\n\nР’С‹С…РѕРґРЅР°СЏ РїР°РїРєР°:\n{result.OutputFolder}",
+                "Р“РѕС‚РѕРІРѕ",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            RunLog = $"Ошибка: {ex.Message}";
+            RunLog = $"РћС€РёР±РєР°: {ex.Message}";
 
             System.Windows.MessageBox.Show(
                 this,
                 ex.Message,
-                "Ошибка",
+                "РћС€РёР±РєР°",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         }
@@ -217,7 +219,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             SelectedPath = Directory.Exists(initialPath) ? initialPath : Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
             UseDescriptionForTitle = true,
-            Description = "Выберите папку"
+            Description = "Р’С‹Р±РµСЂРёС‚Рµ РїР°РїРєСѓ"
         };
 
         return dialog.ShowDialog() == Forms.DialogResult.OK
