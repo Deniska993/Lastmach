@@ -87,7 +87,8 @@ public sealed class ConfigService
             .Select(static config => new PlatformConfig
             {
                 Name = config.Name.Trim(),
-                Sizes = config.NormalizedSizes.ToList()
+                Sizes = config.NormalizedSizes.ToList(),
+                MaxFileSizeKb = config.MaxFileSizeKb is > 0 ? config.MaxFileSizeKb : null
             })
             .OrderBy(static config => config.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
