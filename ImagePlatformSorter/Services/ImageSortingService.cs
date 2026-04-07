@@ -19,6 +19,8 @@ public sealed class ImageSortingService
         ".gif"
     };
 
+    private readonly ImageCompressionService _compressionService = new();
+
     public SortExecutionResult Sort(SortRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.InputFolder) || !Directory.Exists(request.InputFolder))
@@ -88,6 +90,20 @@ public sealed class ImageSortingService
                     continue;
                 }
 
+                if (platform.MaxFileSizeKb is > 0)
+                {
+                    if (TryCopyOrCompressWithinLimit(filePath, targetFilePath, fileName, platform, platformFolderName, logs))
+                    {
+                        copiedFiles++;
+                    }
+                    else
+                    {
+                        skippedFiles++;
+                    }
+
+                    continue;
+                }
+
                 File.Copy(filePath, targetFilePath, request.OverwriteExisting);
                 copiedFiles++;
                 logs.Add($"РЎРєРѕРїРёСЂРѕРІР°РЅРѕ: {fileName} -> {platformFolderName}");
@@ -103,6 +119,39 @@ public sealed class ImageSortingService
             OutputFolder = outputRoot,
             LogLines = logs
         };
+    }
+
+    private bool TryCopyOrCompressWithinLimit(
+        string sourceFilePath,
+        string targetFilePath,
+        string fileName,
+        PlatformConfig platform,
+        string platformFolderName,
+        List<string> logs)
+    {
+        var sourceFileSizeBytes = new FileInfo(sourceFilePath).Length;
+        var maxFileSizeBytes = platform.MaxFileSizeKb!.Value * 1024L;
+
+        if (sourceFileSizeBytes <= maxFileSizeBytes)
+        {
+            File.Copy(sourceFilePath, targetFilePath, overwrite: true);
+            logs.Add($"РЎРєРѕРїРёСЂРѕРІР°РЅРѕ: {fileName} -> {platformFolderName} (Р»РёРјРёС‚ {platform.MaxFileSizeKb} KB, СЃР¶Р°С‚РёРµ РЅРµ С‚СЂРµР±СѓРµС‚СЃСЏ)");
+            return true;
+        }
+
+        var compressionResult = _compressionService.TrySaveWithinLimit(
+            sourceFilePath,
+            targetFilePath,
+            platform.MaxFileSizeKb.Value);
+
+        if (!compressionResult.IsSuccess)
+        {
+            logs.Add($"РћС€РёР±РєР°: {fileName} РЅРµ СѓРґР°Р»РѕСЃСЊ РїРѕРґРіРѕС‚РѕРІРёС‚СЊ РґР»СЏ {platformFolderName}. {compressionResult.ErrorMessage}");
+            return false;
+        }
+
+        logs.Add($"РЎР¶Р°С‚Рѕ: {fileName} -> {platformFolderName} ({Math.Ceiling(compressionResult.OutputFileSizeBytes / 1024d):0} KB / Р»РёРјРёС‚ {platform.MaxFileSizeKb} KB)");
+        return true;
     }
 
     private static string? TryGetSize(string filePath)
