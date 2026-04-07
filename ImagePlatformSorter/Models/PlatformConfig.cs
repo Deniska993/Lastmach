@@ -6,6 +6,7 @@ namespace ImagePlatformSorter.Models;
 public sealed class PlatformConfig
 {
     private static readonly Regex SizeRegex = new(@"^\s*(\d+)\s*[xхXХ]\s*(\d+)\s*$", RegexOptions.Compiled);
+    private static readonly Regex SizeExtractorRegex = new(@"(\d+\s*[xхXХ]\s*\d+)", RegexOptions.Compiled);
 
     public string Name { get; set; } = string.Empty;
 
@@ -44,5 +45,28 @@ public sealed class PlatformConfig
             ? $"{match.Groups[1].Value}x{match.Groups[2].Value}"
             : value.Trim().Replace('х', 'x').Replace('Х', 'x').Replace(" ", string.Empty, StringComparison.Ordinal);
     }
-}
 
+    public static IReadOnlyList<string> ExtractSizes(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return Array.Empty<string>();
+        }
+
+        var matches = SizeExtractorRegex.Matches(input);
+
+        if (matches.Count == 0)
+        {
+            var fallback = NormalizeSize(input);
+            return string.IsNullOrWhiteSpace(fallback)
+                ? Array.Empty<string>()
+                : new[] { fallback };
+        }
+
+        return matches
+            .Select(static match => NormalizeSize(match.Value))
+            .Where(static size => !string.IsNullOrWhiteSpace(size))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+}

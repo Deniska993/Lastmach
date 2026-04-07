@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
 using System.Windows;
 using ImagePlatformSorter.Models;
 
@@ -8,7 +7,6 @@ namespace ImagePlatformSorter.Views;
 
 public partial class PlatformEditorWindow : Window, INotifyPropertyChanged
 {
-    private static readonly Regex SplitRegex = new(@"[,\r\n;]+", RegexOptions.Compiled);
     private string _platformName = string.Empty;
     private string _sizesText = string.Empty;
 
@@ -75,12 +73,7 @@ public partial class PlatformEditorWindow : Window, INotifyPropertyChanged
             return;
         }
 
-        var sizes = SplitRegex
-            .Split(SizesText)
-            .Select(PlatformConfig.NormalizeSize)
-            .Where(static size => !string.IsNullOrWhiteSpace(size))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var sizes = PlatformConfig.ExtractSizes(SizesText).ToList();
 
         if (sizes.Count == 0)
         {

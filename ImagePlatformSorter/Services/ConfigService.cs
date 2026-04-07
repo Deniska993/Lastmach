@@ -24,33 +24,27 @@ public sealed class ConfigService
     {
         EnsureConfigExists();
 
-        var json = File.ReadAllText(ConfigPath);
-        var items = JsonSerializer.Deserialize<List<PlatformConfig>>(json, JsonOptions) ?? new List<PlatformConfig>();
+        try
+        {
+            var json = File.ReadAllText(ConfigPath);
+            var items = JsonSerializer.Deserialize<List<PlatformConfig>>(json, JsonOptions) ?? new List<PlatformConfig>();
+            return NormalizeConfigs(items);
+        }
+        catch (Exception)
+        {
+            BackupInvalidConfig();
 
-        return items
-            .Where(static item => !string.IsNullOrWhiteSpace(item.Name))
-            .Select(static item => new PlatformConfig
-            {
-                Name = item.Name.Trim(),
-                Sizes = item.NormalizedSizes.ToList()
-            })
-            .OrderBy(static item => item.Name, StringComparer.CurrentCultureIgnoreCase)
-            .ToList();
+            var defaults = GetDefaultConfigs();
+            Save(defaults);
+            return defaults;
+        }
     }
 
     public void Save(IEnumerable<PlatformConfig> configs)
     {
         Directory.CreateDirectory(ConfigDirectoryPath);
 
-        var normalized = configs
-            .Where(static config => !string.IsNullOrWhiteSpace(config.Name))
-            .Select(static config => new PlatformConfig
-            {
-                Name = config.Name.Trim(),
-                Sizes = config.NormalizedSizes.ToList()
-            })
-            .OrderBy(static config => config.Name, StringComparer.CurrentCultureIgnoreCase)
-            .ToList();
+        var normalized = NormalizeConfigs(configs);
 
         var json = JsonSerializer.Serialize(normalized, JsonOptions);
         File.WriteAllText(ConfigPath, json);
@@ -85,5 +79,31 @@ public sealed class ConfigService
                 Sizes = new List<string> { "320x480" }
             }
         };
-}
 
+    private static List<PlatformConfig> NormalizeConfigs(IEnumerable<PlatformConfig> configs) =>
+        configs
+            .Where(static config => !string.IsNullOrWhiteSpace(config.Name))
+            .Select(static config => new PlatformConfig
+            {
+                Name = config.Name.Trim(),
+                Sizes = config.NormalizedSizes.ToList()
+            })
+            .OrderBy(static config => config.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+
+    private void BackupInvalidConfig()
+    {
+        if (!File.Exists(ConfigPath))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(ConfigDirectoryPath);
+
+        var backupPath = Path.Combine(
+            ConfigDirectoryPath,
+            $"config.invalid-{DateTime.Now:yyyyMMdd-HHmmss}.json");
+
+        File.Copy(ConfigPath, backupPath, overwrite: true);
+    }
+}

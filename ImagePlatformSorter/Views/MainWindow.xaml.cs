@@ -97,7 +97,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             Platforms.Add(new PlatformSelectionItem(config));
         }
 
-        RunLog = $"Конфиг загружен: {_configService.ConfigPath}";
+        RunLog = Platforms.Count == 0
+            ? $"Конфиг загружен, но список площадок пуст: {_configService.ConfigPath}"
+            : $"Конфиг загружен: {_configService.ConfigPath}";
     }
 
     private void BrowseInputFolder_Click(object sender, RoutedEventArgs e)
