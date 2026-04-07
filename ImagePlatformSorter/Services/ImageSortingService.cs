@@ -41,6 +41,8 @@ public sealed class ImageSortingService
 
         var logs = new List<string>();
         var copiedFiles = 0;
+        var compressedFiles = 0;
+        var compressionErrorFiles = 0;
         var skippedFiles = 0;
         var unmatchedFiles = 0;
         var processedImageFiles = 0;
@@ -92,13 +94,21 @@ public sealed class ImageSortingService
 
                 if (platform.MaxFileSizeKb is > 0)
                 {
-                    if (TryCopyOrCompressWithinLimit(filePath, targetFilePath, fileName, platform, platformFolderName, logs))
+                    var limitResult = TryCopyOrCompressWithinLimit(filePath, targetFilePath, fileName, platform, platformFolderName, logs);
+
+                    switch (limitResult)
                     {
-                        copiedFiles++;
-                    }
-                    else
-                    {
-                        skippedFiles++;
+                        case LimitedCopyResult.CopiedOriginal:
+                            copiedFiles++;
+                            break;
+                        case LimitedCopyResult.Compressed:
+                            copiedFiles++;
+                            compressedFiles++;
+                            break;
+                        default:
+                            skippedFiles++;
+                            compressionErrorFiles++;
+                            break;
                     }
 
                     continue;
@@ -114,6 +124,8 @@ public sealed class ImageSortingService
         {
             ProcessedImageFiles = processedImageFiles,
             CopiedFiles = copiedFiles,
+            CompressedFiles = compressedFiles,
+            CompressionErrorFiles = compressionErrorFiles,
             SkippedFiles = skippedFiles,
             UnmatchedFiles = unmatchedFiles,
             OutputFolder = outputRoot,
@@ -121,7 +133,7 @@ public sealed class ImageSortingService
         };
     }
 
-    private bool TryCopyOrCompressWithinLimit(
+    private LimitedCopyResult TryCopyOrCompressWithinLimit(
         string sourceFilePath,
         string targetFilePath,
         string fileName,
@@ -136,7 +148,7 @@ public sealed class ImageSortingService
         {
             File.Copy(sourceFilePath, targetFilePath, overwrite: true);
             logs.Add($"РЎРєРѕРїРёСЂРѕРІР°РЅРѕ: {fileName} -> {platformFolderName} (Р»РёРјРёС‚ {platform.MaxFileSizeKb} KB, СЃР¶Р°С‚РёРµ РЅРµ С‚СЂРµР±СѓРµС‚СЃСЏ)");
-            return true;
+            return LimitedCopyResult.CopiedOriginal;
         }
 
         var compressionResult = _compressionService.TrySaveWithinLimit(
@@ -146,12 +158,16 @@ public sealed class ImageSortingService
 
         if (!compressionResult.IsSuccess)
         {
-            logs.Add($"РћС€РёР±РєР°: {fileName} РЅРµ СѓРґР°Р»РѕСЃСЊ РїРѕРґРіРѕС‚РѕРІРёС‚СЊ РґР»СЏ {platformFolderName}. {compressionResult.ErrorMessage}");
-            return false;
+            logs.Add($"РћС€РёР±РєР° Р»РёРјРёС‚Р°: {fileName} -> {platformFolderName}. {compressionResult.ErrorMessage}");
+            return LimitedCopyResult.Failed;
         }
 
-        logs.Add($"РЎР¶Р°С‚Рѕ: {fileName} -> {platformFolderName} ({Math.Ceiling(compressionResult.OutputFileSizeBytes / 1024d):0} KB / Р»РёРјРёС‚ {platform.MaxFileSizeKb} KB)");
-        return true;
+        var qualityPart = compressionResult.JpegQuality is > 0
+            ? $", quality {compressionResult.JpegQuality}"
+            : string.Empty;
+
+        logs.Add($"РЎР¶Р°С‚Рѕ: {fileName} -> {platformFolderName} ({Math.Ceiling(compressionResult.OutputFileSizeBytes / 1024d):0} KB / Р»РёРјРёС‚ {platform.MaxFileSizeKb} KB{qualityPart})");
+        return LimitedCopyResult.Compressed;
     }
 
     private static string? TryGetSize(string filePath)
@@ -194,5 +210,12 @@ public sealed class ImageSortingService
         }
 
         return safeName.TrimEnd('.', ' ');
+    }
+
+    private enum LimitedCopyResult
+    {
+        CopiedOriginal,
+        Compressed,
+        Failed
     }
 }
